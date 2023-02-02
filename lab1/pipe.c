@@ -6,9 +6,16 @@
 #include <errno.h>
 int main(int argc, char *argv[])
 {
+  int* pid_array;
+  pid_array=(int *)malloc((argc-1)*sizeof(int));
+  if (pid_array==NULL)
+  {
+    return errno;
+  }
   int fd[2];
   int prev_fd_read;
   int status;
+  
   if (argc==1)
   {
     return EINVAL;
@@ -19,9 +26,6 @@ int main(int argc, char *argv[])
      {
        pipe(fd);
      }
-     printf("The read end of the pipe: %d\n",fd[0]);
-     printf("The write end of the pipe: %d\n",fd[1]);
-     printf("The prev_read: %d\n",prev_fd_read);
      int t = fork();
      if (t==0)
      {
@@ -41,12 +45,33 @@ int main(int argc, char *argv[])
        }
       execlp(argv[i],argv[i],NULL);
       //error handler for child processes
+      printf("Errno: %d\n",errno);
       return errno;
      }
      else if (t>0)
      {
-       //Error handler for parent process
-       int w_error=waitpid(t,&status,0);
+       
+       pid_array[i-1]=t;
+       //Ensure that everything closes properly in parent process
+       if (i<argc-1)
+       {
+	 close(fd[1]);
+       }
+       if (i>1)
+       {
+	 close(prev_fd_read);
+       }
+       prev_fd_read=fd[0];
+     }
+     else
+     {
+       return ECHILD;
+     }
+     
+   }
+  for (int i=0;i<argc-1;i++)
+  {
+       int w_error=waitpid(pid_array[i],&status,0);
        if (w_error==-1)
        {
 	 return errno;
@@ -62,23 +87,6 @@ int main(int argc, char *argv[])
 	   return WEXITSTATUS(status);
 	 }
        }
-       //Ensure that everything closes properly in parent process
-       if (i<argc-1)
-       {
-	 close(fd[1]);
-       }
-       if (i>1)
-       {
-	 close(prev_fd_read);
-       }
-       prev_fd_read=fd[0];
-     }
-     else
-     {
-       exit(ECHILD);
-       return ECHILD;
-     }
-     
-   }
+  }
   return 0;
 }
