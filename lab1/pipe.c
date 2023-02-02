@@ -74,19 +74,23 @@ int main(int argc, char *argv[])
        int w_error=waitpid(pid_array[i],&status,0);
        if (w_error==-1)
        {
+	 free(pid_array);
 	 return errno;
        }
        if(!WIFEXITED(status))
        {
+	 free(pid_array);
 	 return ECHILD;
        }
        else
        {
 	 if (WEXITSTATUS(status)!=0)
 	 {
+	   free(pid_array);
 	   return WEXITSTATUS(status);
 	 }
        }
   }
+  free(pid_array);
   return 0;
 }
