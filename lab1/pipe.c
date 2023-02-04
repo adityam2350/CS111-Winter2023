@@ -45,7 +45,6 @@ int main(int argc, char *argv[])
        }
       execlp(argv[i],argv[i],NULL);
       //error handler for child processes
-      printf("Errno: %d\n",errno);
       return errno;
      }
      else if (t>0)
