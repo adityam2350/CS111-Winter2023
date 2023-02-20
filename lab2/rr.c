@@ -169,10 +169,10 @@ int main(int argc, char *argv[])
   int time=0;
   bool remove=false;
   bool add_back=false;
-  u32 pid_running=-1;
-  int i=0;
+  int pid_running=-1;
+  int added=0;
   u32 slice_left=quantum_length;
-  u32 earliest_time=10000000;
+  u32 earliest_time=data[0].arrival_time;
 
   for (int i=0;i<size;i++)
   {
@@ -181,8 +181,7 @@ int main(int argc, char *argv[])
 	earliest_time=data[i].arrival_time;
       }
   }
-
-  while(!TAILQ_EMPTY(&list) || time <= data[0].arrival_time)
+  while(!TAILQ_EMPTY(&list) || added < size)
   {
     //Adds processes to the process queue as they arrive
     for (int i=0;i<size;i++)
@@ -192,7 +191,8 @@ int main(int argc, char *argv[])
 	 data[i].recent_cpu=data[i].arrival_time;
 	 data[i].waiting_first=true;
 	 //printf("Added: %zu at time %zu \n",data[i].pid,time);
-         TAILQ_INSERT_TAIL(&list,&data[i],pointers); 	
+         TAILQ_INSERT_TAIL(&list,&data[i],pointers);
+	 added++;
       }
     }
     //Add the recently popped process back to the queue if it's burst time isn't complete
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
       if(add_back)
       {
           TAILQ_INSERT_TAIL(&list,current_proc,pointers);
-	  // printf("Added: %zu at time %zu \n",current_proc->pid,time);
+	  //printf("Added: %zu at time %zu \n",current_proc->pid,time);
       }
       slice_left=quantum_length;
     }
